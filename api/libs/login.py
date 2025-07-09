@@ -65,10 +65,22 @@ def login_required(func):
 
 
 def _get_user() -> EndUser | Account | None:
-    if has_request_context():
-        if "_login_user" not in g:
-            current_app.login_manager._load_user()  # type: ignore
-
-        return g._login_user  # type: ignore
-
-    return None
+    if not has_request_context():
+        return None
+    
+    # Check if the user is already cached in g
+    if hasattr(g, '_login_user'):
+        return g._login_user
+    
+    # Completely skip session check, directly call request_loader
+    login_manager = current_app.login_manager
+    if hasattr(login_manager, '_request_callback') and login_manager._request_callback:
+        user = login_manager._request_callback(request)
+        if user is not None:
+            # Store the user in g._login_user so Flask-Login's current_user can find it
+            g._login_user = user
+            return user
+    
+    # Even if there is no user, set g._login_user to AnonymousUser
+    g._login_user = login_manager.anonymous_user()
+    return g._login_user
