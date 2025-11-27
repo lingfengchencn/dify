@@ -2,7 +2,6 @@ import base64
 import hashlib
 import hmac
 import logging
-import os
 import time
 from collections.abc import Generator
 from mimetypes import guess_extension, guess_type

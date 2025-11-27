@@ -112,7 +112,7 @@ class ToolFileMessageTransformer:
 
                 mimetype = meta.get("mime_type", "application/octet-stream")
                 # get filename from meta
-                filename = meta.get("filename", None)
+                filename = meta.get("filename")
                 # if message is str, encode it to bytes
 
                 if not isinstance(message.message, ToolInvokeMessage.BlobMessage):
@@ -154,7 +154,7 @@ class ToolFileMessageTransformer:
                     )
             elif message.type == ToolInvokeMessage.MessageType.FILE:
                 meta = dict(getattr(message, "meta", {}) or {})
-                file = meta.get("file", None)
+                file = meta.get("file")
                 if isinstance(file, File):
                     if file.transfer_method == FileTransferMethod.TOOL_FILE:
                         assert file.related_id is not None
