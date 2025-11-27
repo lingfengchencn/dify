@@ -1,6 +1,6 @@
 import posixpath
-from urllib.parse import urlparse, urlunparse
 from collections.abc import Generator
+from urllib.parse import urlparse, urlunparse
 
 import oss2 as aliyun_s3
 
