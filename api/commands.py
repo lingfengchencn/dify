@@ -1144,7 +1144,7 @@ def remove_orphaned_files_on_storage(force: bool):
     for storage_path in storage_paths:
         try:
             click.echo(click.style(f"- Scanning files on storage path {storage_path}", fg="white"))
-            files = storage.scan(path=storage_path, files=True, directories=False)
+            files = storage.scan(path=storage_path, files=True, directories=False, recursive=True)
             all_files_on_storage.extend(files)
         except FileNotFoundError as e:
             click.echo(click.style(f"  -> Skipping path {storage_path} as it does not exist.", fg="yellow"))
@@ -1798,7 +1798,7 @@ def migrate_oss(
     for prefix in path_list:
         click.echo(click.style(f"Scanning source path: {prefix}", fg="white"))
         try:
-            keys = source_storage.scan(path=prefix, files=True, directories=False)
+            keys = source_storage.scan(path=prefix, files=True, directories=False, recursive=True)
         except FileNotFoundError:
             click.echo(click.style(f"  -> Skipping missing path: {prefix}", fg="yellow"))
             continue

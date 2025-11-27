@@ -83,22 +83,68 @@ class OpenDALStorage(BaseStorage):
             return
         logger.debug("file %s not found, skip delete", filename)
 
-    def scan(self, path: str, files: bool = True, directories: bool = False) -> list[str]:
+    def scan(
+        self,
+        path: str,
+        files: bool = True,
+        directories: bool = False,
+        recursive: bool = False,
+    ) -> list[str]:
         if not self.exists(path):
             raise FileNotFoundError("Path not found")
 
-        all_files = self.op.list(path=path)
-        if files and directories:
-            logger.debug("files and directories on %s scanned", path)
-            return [f.path for f in all_files]
-        if files:
-            logger.debug("files on %s scanned", path)
-            return [f.path for f in all_files if not f.path.endswith("/")]
-        elif directories:
-            logger.debug("directories on %s scanned", path)
-            return [f.path for f in all_files if f.path.endswith("/")]
-        else:
-            raise ValueError("At least one of files or directories must be True")
+        # Trim trailing slash so we don't keep re-visiting the same directory
+        base_path = path.rstrip("/") if path else path
+
+        items: list[str] = []
+
+        if not recursive:
+            entries = self.op.list(path=base_path)
+            for entry in entries:
+                entry_path = entry.path
+                is_directory = entry_path.endswith("/")
+
+                if is_directory:
+                    if directories:
+                        items.append(entry_path)
+                else:
+                    if files:
+                        items.append(entry_path)
+
+            logger.debug(
+                "scanned %s on %s (recursive=%s)",
+                "files/directories" if files and directories else "files" if files else "directories",
+                path,
+                recursive,
+            )
+            return items
+
+        # Depth-first traversal for recursive listing
+        stack: list[str] = [base_path]
+        visited: set[str] = set()
+
+        while stack:
+            current = stack.pop()
+            if current in visited:
+                continue
+            visited.add(current)
+
+            for entry in self.op.list(path=current):
+                entry_path = entry.path
+                is_directory = entry_path.endswith("/")
+
+                if is_directory:
+                    if directories:
+                        items.append(entry_path)
+                    stack.append(entry_path.rstrip("/"))
+                else:
+                    if files:
+                        items.append(entry_path)
+
+        logger.debug(
+            "recursively scanned %d items under %s", len(items), path
+        )
+        return items
 
     def get_url(self, filename: str, *, expires_in: int) -> str:
         raise NotImplementedError("OpenDAL filesystem storage does not expose public URLs")

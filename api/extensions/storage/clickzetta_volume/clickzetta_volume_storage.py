@@ -472,18 +472,30 @@ class ClickZettaVolumeStorage(BaseStorage):
 
         logger.debug("File %s deleted from ClickZetta Volume", filename)
 
-    def scan(self, path: str, files: bool = True, directories: bool = False) -> list[str]:
+    def scan(
+        self,
+        path: str,
+        files: bool = True,
+        directories: bool = False,
+        recursive: bool = False,
+    ) -> list[str]:
         """Scan files and directories in ClickZetta Volume.
 
         Args:
             path: Path to scan (dataset_id for table volumes)
             files: Include files in results
             directories: Include directories in results
+            recursive: Currently ignored; ClickZetta API returns flattened results scoped to `path`.
 
         Returns:
             List of file/directory paths
         """
         try:
+            if recursive:
+                logger.debug(
+                    "ClickZetta Volume storage does not support recursive scans; returning items under %s only.",
+                    path,
+                )
             # For table volumes, path is treated as dataset_id
             dataset_id = None
             if self._config.volume_type == "table":

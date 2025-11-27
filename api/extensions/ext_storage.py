@@ -123,8 +123,14 @@ class Storage:
                 "The current storage backend does not expose public URLs; set FILES_URL_TYPE='local'."
             ) from exc
 
-    def scan(self, path: str, files: bool = True, directories: bool = False) -> list[str]:
-        return self.storage_runner.scan(path, files=files, directories=directories)
+    def scan(
+        self,
+        path: str,
+        files: bool = True,
+        directories: bool = False,
+        recursive: bool = False,
+    ) -> list[str]:
+        return self.storage_runner.scan(path, files=files, directories=directories, recursive=recursive)
 
 
 storage = Storage()
