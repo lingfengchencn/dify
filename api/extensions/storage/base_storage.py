@@ -36,10 +36,11 @@ class BaseStorage(ABC):
         """Return a publicly accessible URL for the given filename."""
         raise NotImplementedError
 
-    def scan(self, path, files=True, directories=False, recursive=False) -> list[str]:
+    def scan(self, path, files=True, directories=False) -> list[str]:
         """
         Scan files and directories in the given path.
         This method is implemented only in some storage backends.
         If a storage backend doesn't support scanning, it will raise NotImplementedError.
         """
-        raise NotImplementedError("This storage backend doesn't support scanning")
+        raise NotImplementedError(
+            "This storage backend doesn't support scanning")

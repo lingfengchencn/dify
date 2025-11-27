@@ -1,4 +1,5 @@
 import posixpath
+from urllib.parse import urlparse, urlunparse
 from collections.abc import Generator
 from urllib.parse import urlparse, urlunparse
 

@@ -11,6 +11,7 @@ import pytz
 from core.file import File, FileTransferMethod, FileType
 from core.tools.entities.tool_entities import ToolInvokeMessage
 from core.tools.signature import sign_tool_file
+from core.tools.signature import sign_tool_file
 from core.tools.tool_file_manager import ToolFileManager
 from libs.login import current_user
 from models import Account
@@ -49,7 +50,8 @@ def safe_json_value(v):
 
 def safe_json_dict(d: dict):
     if not isinstance(d, dict):
-        raise TypeError("safe_json_dict() expects a dictionary (dict) as input")
+        raise TypeError(
+            "safe_json_dict() expects a dictionary (dict) as input")
     return {k: safe_json_value(v) for k, v in d.items()}
 
 
@@ -73,7 +75,8 @@ class ToolFileMessageTransformer:
             ):
                 # try to download image
                 try:
-                    assert isinstance(message.message, ToolInvokeMessage.TextMessage)
+                    assert isinstance(
+                        message.message, ToolInvokeMessage.TextMessage)
                     tool_file_manager = ToolFileManager()
                     tool_file = tool_file_manager.create_file_by_url(
                         user_id=user_id,
@@ -84,13 +87,15 @@ class ToolFileMessageTransformer:
 
                     url = sign_tool_file(
                         tool_file_id=tool_file.id,
-                        extension=guess_extension(tool_file.mimetype) or ".png",
+                        extension=guess_extension(
+                            tool_file.mimetype) or ".png",
                         storage_key=tool_file.file_key,
                     )
 
                     meta_copy = dict(getattr(message, "meta", {}) or {})
                     meta_copy.setdefault("tool_file_id", tool_file.id)
-                    meta_copy.setdefault("tool_file_storage_key", tool_file.file_key)
+                    meta_copy.setdefault(
+                        "tool_file_storage_key", tool_file.file_key)
 
                     yield ToolInvokeMessage(
                         type=ToolInvokeMessage.MessageType.IMAGE_LINK,
@@ -137,7 +142,8 @@ class ToolFileMessageTransformer:
 
                 meta_copy = dict(meta)
                 meta_copy.setdefault("tool_file_id", tool_file.id)
-                meta_copy.setdefault("tool_file_storage_key", tool_file.file_key)
+                meta_copy.setdefault(
+                    "tool_file_storage_key", tool_file.file_key)
 
                 # check if file is image
                 if "image" in mimetype:
@@ -151,10 +157,11 @@ class ToolFileMessageTransformer:
                         type=ToolInvokeMessage.MessageType.BINARY_LINK,
                         message=ToolInvokeMessage.TextMessage(text=url),
                         meta=meta_copy,
+                        meta=meta_copy,
                     )
             elif message.type == ToolInvokeMessage.MessageType.FILE:
                 meta = dict(getattr(message, "meta", {}) or {})
-                file = meta.get("file")
+                file = meta.get("file", None)
                 if isinstance(file, File):
                     if file.transfer_method == FileTransferMethod.TOOL_FILE:
                         assert file.related_id is not None
@@ -165,17 +172,20 @@ class ToolFileMessageTransformer:
                         )
                         meta_copy = dict(meta)
                         meta_copy.setdefault("tool_file_id", file.related_id)
-                        meta_copy.setdefault("tool_file_storage_key", file.storage_key)
+                        meta_copy.setdefault(
+                            "tool_file_storage_key", file.storage_key)
                         if file.type == FileType.IMAGE:
                             yield ToolInvokeMessage(
                                 type=ToolInvokeMessage.MessageType.IMAGE_LINK,
-                                message=ToolInvokeMessage.TextMessage(text=url),
+                                message=ToolInvokeMessage.TextMessage(
+                                    text=url),
                                 meta=meta_copy,
                             )
                         else:
                             yield ToolInvokeMessage(
                                 type=ToolInvokeMessage.MessageType.LINK,
-                                message=ToolInvokeMessage.TextMessage(text=url),
+                                message=ToolInvokeMessage.TextMessage(
+                                    text=url),
                                 meta=meta_copy,
                             )
                     else:
@@ -183,7 +193,8 @@ class ToolFileMessageTransformer:
 
             elif message.type == ToolInvokeMessage.MessageType.JSON:
                 if isinstance(message.message, ToolInvokeMessage.JsonMessage):
-                    message.message.json_object = safe_json_value(message.message.json_object)
+                    message.message.json_object = safe_json_value(
+                        message.message.json_object)
                 yield message
             else:
                 yield message

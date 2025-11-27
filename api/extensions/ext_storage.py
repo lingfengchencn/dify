@@ -89,10 +89,12 @@ class Storage:
         self.storage_runner.save(filename, data)
 
     @overload
-    def load(self, filename: str, /, *, stream: Literal[False] = False) -> bytes: ...
+    def load(self, filename: str, /, *,
+             stream: Literal[False] = False) -> bytes: ...
 
     @overload
-    def load(self, filename: str, /, *, stream: Literal[True]) -> Generator: ...
+    def load(self, filename: str, /, *,
+             stream: Literal[True]) -> Generator: ...
 
     def load(self, filename: str, /, *, stream: bool = False) -> Union[bytes, Generator]:
         if stream:

@@ -17,12 +17,12 @@ def _get_opendal_kwargs(*, scheme: str, env_file_path: str = ".env", prefix: str
     config_prefix = prefix + scheme.upper() + "_"
     for key, value in os.environ.items():
         if key.startswith(config_prefix):
-            kwargs[key[len(config_prefix) :].lower()] = value
+            kwargs[key[len(config_prefix):].lower()] = value
 
     file_env_vars: dict = dotenv_values(env_file_path) or {}
     for key, value in file_env_vars.items():
-        if key.startswith(config_prefix) and key[len(config_prefix) :].lower() not in kwargs and value:
-            kwargs[key[len(config_prefix) :].lower()] = value
+        if key.startswith(config_prefix) and key[len(config_prefix):].lower() not in kwargs and value:
+            kwargs[key[len(config_prefix):].lower()] = value
 
     return kwargs
 
@@ -41,7 +41,8 @@ class OpenDALStorage(BaseStorage):
             root_path.mkdir(parents=True, exist_ok=True)
             self._fs_root = root_path
 
-        retry_layer = opendal.layers.RetryLayer(max_times=3, factor=2.0, jitter=True)
+        retry_layer = opendal.layers.RetryLayer(
+            max_times=3, factor=2.0, jitter=True)
         self.op = Operator(scheme=scheme, **kwargs).layer(retry_layer)
         logger.debug("opendal operator created with scheme %s", scheme)
         logger.debug("added retry layer to opendal operator")
@@ -185,7 +186,8 @@ class OpenDALStorage(BaseStorage):
             return [_relative(target_path)] if files else []
 
         items: list[str] = []
-        iterator = target_path.rglob("*") if recursive else target_path.iterdir()
+        iterator = target_path.rglob(
+            "*") if recursive else target_path.iterdir()
 
         for entry in iterator:
             if entry.is_dir():
@@ -205,4 +207,5 @@ class OpenDALStorage(BaseStorage):
         return items
 
     def get_url(self, filename: str, *, expires_in: int) -> str:
-        raise NotImplementedError("OpenDAL filesystem storage does not expose public URLs")
+        raise NotImplementedError(
+            "OpenDAL filesystem storage does not expose public URLs")
