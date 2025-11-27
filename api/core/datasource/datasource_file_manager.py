@@ -174,13 +174,13 @@ class DatasourceFileManager:
 
         # Check if message_file is not None
         if message_file is not None:
-            # get tool file id
-            if message_file.url is not None:
-                tool_file_id = message_file.url.split("/")[-1]
-                # trim extension
-                tool_file_id = tool_file_id.split(".")[0]
-            else:
-                tool_file_id = None
+            tool_file_id = message_file.upload_file_id
+            if (
+                not tool_file_id
+                and message_file.url is not None
+                and "/files/tools/" in message_file.url
+            ):
+                tool_file_id = message_file.url.split("/")[-1].split(".")[0]
         else:
             tool_file_id = None
 

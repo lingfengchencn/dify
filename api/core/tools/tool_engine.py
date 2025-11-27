@@ -292,6 +292,7 @@ class ToolEngine:
                 yield ToolInvokeMessageBinary(
                     mimetype=response.meta.get("mime_type", mimetype),
                     url=cast(ToolInvokeMessage.TextMessage, response.message).text,
+                    meta=response.meta.copy() if response.meta else None,
                 )
             elif response.type == ToolInvokeMessage.MessageType.BLOB:
                 if not response.meta:
@@ -300,6 +301,7 @@ class ToolEngine:
                 yield ToolInvokeMessageBinary(
                     mimetype=response.meta.get("mime_type", "application/octet-stream"),
                     url=cast(ToolInvokeMessage.TextMessage, response.message).text,
+                    meta=response.meta.copy() if response.meta else None,
                 )
             elif response.type == ToolInvokeMessage.MessageType.LINK:
                 # check if there is a mime type in meta
@@ -309,6 +311,7 @@ class ToolEngine:
                         if response.meta
                         else "application/octet-stream",
                         url=cast(ToolInvokeMessage.TextMessage, response.message).text,
+                        meta=response.meta.copy() if response.meta else None,
                     )
 
     @staticmethod
@@ -337,8 +340,13 @@ class ToolEngine:
             else:
                 file_type = FileType.CUSTOM
 
-            # extract tool file id from url
-            tool_file_id = message.url.split("/")[-1].split(".")[0]
+            meta = message.meta or {}
+            tool_file_id = meta.get("tool_file_id")
+            if (
+                not tool_file_id
+                and "/files/tools/" in message.url
+            ):
+                tool_file_id = message.url.split("/")[-1].split(".")[0]
             message_file = MessageFile(
                 message_id=agent_message.id,
                 type=file_type,

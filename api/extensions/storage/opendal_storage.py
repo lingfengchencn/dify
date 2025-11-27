@@ -99,3 +99,6 @@ class OpenDALStorage(BaseStorage):
             return [f.path for f in all_files if f.path.endswith("/")]
         else:
             raise ValueError("At least one of files or directories must be True")
+
+    def get_url(self, filename: str, *, expires_in: int) -> str:
+        raise NotImplementedError("OpenDAL filesystem storage does not expose public URLs")

@@ -315,6 +315,11 @@ class FileAccessConfig(BaseSettings):
         default=300,
     )
 
+    FILES_URL_TYPE: Literal["local", "cloud"] = Field(
+        description="Select 'local' to proxy downloads through the API, or 'cloud' to expose storage URLs directly",
+        default="local",
+    )
+
 
 class FileUploadConfig(BaseSettings):
     """

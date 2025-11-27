@@ -249,6 +249,7 @@ class ToolInvokeMessageBinary(BaseModel):
     mimetype: str = Field(..., description="The mimetype of the binary")
     url: str = Field(..., description="The url of the binary")
     file_var: dict[str, Any] | None = None
+    meta: dict[str, Any] | None = None
 
 
 class ToolParameter(PluginParameter):

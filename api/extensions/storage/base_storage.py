@@ -31,6 +31,11 @@ class BaseStorage(ABC):
     def delete(self, filename):
         raise NotImplementedError
 
+    @abstractmethod
+    def get_url(self, filename: str, *, expires_in: int) -> str:
+        """Return a publicly accessible URL for the given filename."""
+        raise NotImplementedError
+
     def scan(self, path, files=True, directories=False) -> list[str]:
         """
         Scan files and directories in the given path.

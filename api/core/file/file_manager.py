@@ -161,6 +161,6 @@ def _to_url(f: File, /):
         # add sign url
         if f.related_id is None or f.extension is None:
             raise ValueError("Missing file related_id or extension")
-        return sign_tool_file(tool_file_id=f.related_id, extension=f.extension)
+        return sign_tool_file(tool_file_id=f.related_id, extension=f.extension, storage_key=f.storage_key)
     else:
         raise ValueError(f"Unsupported transfer method: {f.transfer_method}")

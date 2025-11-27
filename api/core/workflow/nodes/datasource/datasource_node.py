@@ -339,7 +339,9 @@ class DatasourceNode(Node):
                 url = message.message.text
                 transfer_method = FileTransferMethod.TOOL_FILE
 
-                datasource_file_id = str(url).split("/")[-1].split(".")[0]
+                datasource_file_id = message.meta.get("tool_file_id") if message.meta else None
+                if not datasource_file_id and "/files/tools/" in str(url):
+                    datasource_file_id = str(url).split("/")[-1].split(".")[0]
 
                 with Session(db.engine) as session:
                     stmt = select(ToolFile).where(ToolFile.id == datasource_file_id)
@@ -363,7 +365,9 @@ class DatasourceNode(Node):
                 assert isinstance(message.message, DatasourceMessage.TextMessage)
                 assert message.meta
 
-                datasource_file_id = message.message.text.split("/")[-1].split(".")[0]
+                datasource_file_id = message.meta.get("tool_file_id") if message.meta else None
+                if not datasource_file_id and "/files/tools/" in message.message.text:
+                    datasource_file_id = message.message.text.split("/")[-1].split(".")[0]
                 with Session(db.engine) as session:
                     stmt = select(ToolFile).where(ToolFile.id == datasource_file_id)
                     datasource_file = session.scalar(stmt)
@@ -469,7 +473,9 @@ class DatasourceNode(Node):
                 url = message.message.text
                 transfer_method = FileTransferMethod.TOOL_FILE
 
-                datasource_file_id = str(url).split("/")[-1].split(".")[0]
+                datasource_file_id = message.meta.get("tool_file_id") if message.meta else None
+                if not datasource_file_id and "/files/tools/" in str(url):
+                    datasource_file_id = str(url).split("/")[-1].split(".")[0]
 
                 with Session(db.engine) as session:
                     stmt = select(ToolFile).where(ToolFile.id == datasource_file_id)

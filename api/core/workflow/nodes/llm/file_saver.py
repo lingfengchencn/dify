@@ -107,7 +107,7 @@ class FileSaverImpl(LLMFileSaver):
         )
         extension_override = _validate_extension_override(extension_override)
         extension = _get_extension(mime_type, extension_override)
-        url = sign_tool_file(tool_file.id, extension)
+        url = sign_tool_file(tool_file.id, extension, storage_key=tool_file.file_key)
 
         return File(
             tenant_id=self._tenant_id,

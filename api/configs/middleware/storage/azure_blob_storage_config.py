@@ -26,3 +26,8 @@ class AzureBlobStorageConfig(BaseSettings):
         description="URL of the Azure Blob storage endpoint (e.g., 'https://mystorageaccount.blob.core.windows.net')",
         default=None,
     )
+
+    AZURE_BLOB_PUBLIC_BASE_URL: str | None = Field(
+        description="Public base URL for serving blobs directly (optional CDN)",
+        default=None,
+    )

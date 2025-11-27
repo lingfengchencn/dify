@@ -26,3 +26,8 @@ class HuaweiCloudOBSStorageConfig(BaseSettings):
         description="Endpoint URL for Huawei Cloud OBS (e.g., 'https://obs.cn-north-4.myhuaweicloud.com')",
         default=None,
     )
+
+    HUAWEI_OBS_PUBLIC_BASE_URL: str | None = Field(
+        description="Public base URL for serving Huawei OBS objects",
+        default=None,
+    )

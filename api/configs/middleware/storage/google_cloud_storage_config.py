@@ -16,3 +16,8 @@ class GoogleCloudStorageConfig(BaseSettings):
         description="Base64-encoded JSON key file for Google Cloud service account authentication",
         default=None,
     )
+
+    GOOGLE_STORAGE_PUBLIC_BASE_URL: str | None = Field(
+        description="Public base URL for serving Google Cloud Storage objects",
+        default=None,
+    )

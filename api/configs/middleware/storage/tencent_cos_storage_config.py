@@ -31,3 +31,8 @@ class TencentCloudCOSStorageConfig(BaseSettings):
         description="Protocol scheme for COS requests: 'https' (recommended) or 'http'",
         default=None,
     )
+
+    TENCENT_COS_PUBLIC_BASE_URL: str | None = Field(
+        description="Public base URL for serving Tencent COS objects",
+        default=None,
+    )

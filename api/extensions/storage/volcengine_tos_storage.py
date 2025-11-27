@@ -64,3 +64,19 @@ class VolcengineTosStorage(BaseStorage):
         if not self.bucket_name:
             return
         self.client.delete_object(bucket=self.bucket_name, key=filename)
+
+    def get_url(self, filename: str, *, expires_in: int) -> str:
+        key = filename.lstrip("/")
+        if dify_config.VOLCENGINE_TOS_PUBLIC_BASE_URL:
+            base = dify_config.VOLCENGINE_TOS_PUBLIC_BASE_URL.rstrip("/")
+            return f"{base}/{key}"
+
+        endpoint = (dify_config.VOLCENGINE_TOS_ENDPOINT or "").rstrip("/")
+        if not endpoint:
+            raise NotImplementedError(
+                "Volcengine TOS public URL is not configured; set VOLCENGINE_TOS_PUBLIC_BASE_URL"
+            )
+
+        if endpoint.endswith(self.bucket_name):
+            return f"{endpoint}/{key}"
+        return f"{endpoint}/{self.bucket_name}/{key}"

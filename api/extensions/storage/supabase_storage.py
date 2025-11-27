@@ -57,3 +57,9 @@ class SupabaseStorage(BaseStorage):
     def bucket_exists(self):
         buckets = self.client.storage.list_buckets()
         return any(bucket.name == self.bucket_name for bucket in buckets)
+
+    def get_url(self, filename: str, *, expires_in: int) -> str:
+        if not dify_config.SUPABASE_PUBLIC_BASE_URL:
+            raise NotImplementedError("Set SUPABASE_PUBLIC_BASE_URL to enable direct Supabase file URLs")
+        base = dify_config.SUPABASE_PUBLIC_BASE_URL.rstrip("/")
+        return f"{base}/{filename.lstrip('/')}"

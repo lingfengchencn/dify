@@ -31,3 +31,8 @@ class OCIStorageConfig(BaseSettings):
         description="Secret key associated with the access key for authenticating with OCI Object Storage",
         default=None,
     )
+
+    OCI_STORAGE_PUBLIC_BASE_URL: str | None = Field(
+        description="Public base URL for serving OCI Object Storage objects",
+        default=None,
+    )

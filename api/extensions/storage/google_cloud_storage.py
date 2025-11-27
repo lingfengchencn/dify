@@ -64,3 +64,16 @@ class GoogleCloudStorage(BaseStorage):
     def delete(self, filename):
         bucket = self.client.get_bucket(self.bucket_name)
         bucket.delete_blob(filename)
+
+    def get_url(self, filename: str, *, expires_in: int) -> str:
+        key = filename.lstrip("/")
+        if dify_config.GOOGLE_STORAGE_PUBLIC_BASE_URL:
+            base = dify_config.GOOGLE_STORAGE_PUBLIC_BASE_URL.rstrip("/")
+            return f"{base}/{key}"
+
+        if not self.bucket_name:
+            raise NotImplementedError("Google Cloud Storage bucket is not configured")
+
+        bucket = self.client.bucket(self.bucket_name)
+        blob = bucket.blob(key)
+        return blob.generate_signed_url(expiration=expires_in)

@@ -1,4 +1,5 @@
 import logging
+from mimetypes import guess_extension
 from threading import Thread
 from typing import Union
 
@@ -32,6 +33,7 @@ from core.llm_generator.llm_generator import LLMGenerator
 from core.tools.signature import sign_tool_file
 from extensions.ext_database import db
 from models.model import AppMode, Conversation, MessageAnnotation, MessageFile
+from models.tools import ToolFile
 from services.annotation_service import AppAnnotationService
 
 logger = logging.getLogger(__name__)
@@ -168,27 +170,40 @@ class MessageCycleManager:
         :param event: event
         :return:
         """
+        tool_file: ToolFile | None = None
+        tool_file_id: str | None = None
+
         with Session(db.engine, expire_on_commit=False) as session:
             message_file = session.scalar(select(MessageFile).where(MessageFile.id == event.message_file_id))
 
-        if message_file and message_file.url is not None:
-            # get tool file id
-            tool_file_id = message_file.url.split("/")[-1]
-            # trim extension
-            tool_file_id = tool_file_id.split(".")[0]
+            if message_file and message_file.url is not None:
+                tool_file_id = message_file.upload_file_id
+                if (
+                    not tool_file_id
+                    and "/files/tools/" in message_file.url
+                ):
+                    tool_file_id = message_file.url.split("/")[-1].split(".")[0]
 
-            # get extension
-            if "." in message_file.url:
-                extension = f".{message_file.url.split('.')[-1]}"
-                if len(extension) > 10:
-                    extension = ".bin"
+                if tool_file_id:
+                    tool_file = session.get(ToolFile, tool_file_id)
+
+        if message_file and message_file.url is not None:
+            extension = ".bin"
+            if tool_file and tool_file.mimetype:
+                extension = guess_extension(tool_file.mimetype) or ".bin"
+            elif "." in message_file.url:
+                ext = f".{message_file.url.split('.')[-1]}"
+                extension = ext if len(ext) <= 10 else ".bin"
+
+            if tool_file_id:
+                storage_key = tool_file.file_key if tool_file else None
+                url = sign_tool_file(
+                    tool_file_id=tool_file_id,
+                    extension=extension,
+                    storage_key=storage_key,
+                )
             else:
-                extension = ".bin"
-            # add sign url to local file
-            if message_file.url.startswith("http"):
                 url = message_file.url
-            else:
-                url = sign_tool_file(tool_file_id=tool_file_id, extension=extension)
 
             return MessageFileStreamResponse(
                 task_id=self._application_generate_entity.task_id,

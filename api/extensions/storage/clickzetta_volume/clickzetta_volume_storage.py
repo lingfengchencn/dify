@@ -526,3 +526,6 @@ class ClickZettaVolumeStorage(BaseStorage):
         except Exception:
             logger.exception("Error scanning path %s", path)
             return []
+
+    def get_url(self, filename: str, *, expires_in: int) -> str:
+        raise NotImplementedError("ClickZetta Volume storage does not provide public URLs")

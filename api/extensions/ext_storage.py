@@ -115,6 +115,14 @@ class Storage:
     def delete(self, filename):
         return self.storage_runner.delete(filename)
 
+    def get_url(self, filename: str) -> str:
+        try:
+            return self.storage_runner.get_url(filename, expires_in=dify_config.FILES_ACCESS_TIMEOUT)
+        except NotImplementedError as exc:  # pragma: no cover - defensive path
+            raise NotImplementedError(
+                "The current storage backend does not expose public URLs; set FILES_URL_TYPE='local'."
+            ) from exc
+
     def scan(self, path: str, files: bool = True, directories: bool = False) -> list[str]:
         return self.storage_runner.scan(path, files=files, directories=directories)
 

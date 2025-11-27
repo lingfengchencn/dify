@@ -41,3 +41,16 @@ class TencentCosStorage(BaseStorage):
 
     def delete(self, filename):
         self.client.delete_object(Bucket=self.bucket_name, Key=filename)
+
+    def get_url(self, filename: str, *, expires_in: int) -> str:
+        key = filename.lstrip("/")
+        if dify_config.TENCENT_COS_PUBLIC_BASE_URL:
+            base = dify_config.TENCENT_COS_PUBLIC_BASE_URL.rstrip("/")
+            return f"{base}/{key}"
+
+        return self.client.get_presigned_url(
+            Method="GET",
+            Bucket=self.bucket_name,
+            Key=key,
+            Expired=expires_in,
+        )

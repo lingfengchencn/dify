@@ -10,6 +10,7 @@ import pytz
 
 from core.file import File, FileTransferMethod, FileType
 from core.tools.entities.tool_entities import ToolInvokeMessage
+from core.tools.signature import sign_tool_file
 from core.tools.tool_file_manager import ToolFileManager
 from libs.login import current_user
 from models import Account
@@ -81,24 +82,33 @@ class ToolFileMessageTransformer:
                         conversation_id=conversation_id,
                     )
 
-                    url = f"/files/tools/{tool_file.id}{guess_extension(tool_file.mimetype) or '.png'}"
+                    url = sign_tool_file(
+                        tool_file_id=tool_file.id,
+                        extension=guess_extension(tool_file.mimetype) or ".png",
+                        storage_key=tool_file.file_key,
+                    )
+
+                    meta_copy = dict(getattr(message, "meta", {}) or {})
+                    meta_copy.setdefault("tool_file_id", tool_file.id)
+                    meta_copy.setdefault("tool_file_storage_key", tool_file.file_key)
 
                     yield ToolInvokeMessage(
                         type=ToolInvokeMessage.MessageType.IMAGE_LINK,
                         message=ToolInvokeMessage.TextMessage(text=url),
-                        meta=message.meta.copy() if message.meta is not None else {},
+                        meta=meta_copy,
                     )
                 except Exception as e:
+                    meta_fallback = dict(getattr(message, "meta", {}) or {})
                     yield ToolInvokeMessage(
                         type=ToolInvokeMessage.MessageType.TEXT,
                         message=ToolInvokeMessage.TextMessage(
                             text=f"Failed to download image: {message.message.text}: {e}"
                         ),
-                        meta=message.meta.copy() if message.meta is not None else {},
+                        meta=meta_fallback,
                     )
             elif message.type == ToolInvokeMessage.MessageType.BLOB:
                 # get mime type and save blob to storage
-                meta = message.meta or {}
+                meta = dict(getattr(message, "meta", {}) or {})
 
                 mimetype = meta.get("mime_type", "application/octet-stream")
                 # get filename from meta
@@ -119,39 +129,54 @@ class ToolFileMessageTransformer:
                     filename=filename,
                 )
 
-                url = cls.get_tool_file_url(tool_file_id=tool_file.id, extension=guess_extension(tool_file.mimetype))
+                url = cls.get_tool_file_url(
+                    tool_file_id=tool_file.id,
+                    extension=guess_extension(tool_file.mimetype),
+                    storage_key=tool_file.file_key,
+                )
+
+                meta_copy = dict(meta)
+                meta_copy.setdefault("tool_file_id", tool_file.id)
+                meta_copy.setdefault("tool_file_storage_key", tool_file.file_key)
 
                 # check if file is image
                 if "image" in mimetype:
                     yield ToolInvokeMessage(
                         type=ToolInvokeMessage.MessageType.IMAGE_LINK,
                         message=ToolInvokeMessage.TextMessage(text=url),
-                        meta=meta.copy() if meta is not None else {},
+                        meta=meta_copy,
                     )
                 else:
                     yield ToolInvokeMessage(
                         type=ToolInvokeMessage.MessageType.BINARY_LINK,
                         message=ToolInvokeMessage.TextMessage(text=url),
-                        meta=meta.copy() if meta is not None else {},
+                        meta=meta_copy,
                     )
             elif message.type == ToolInvokeMessage.MessageType.FILE:
-                meta = message.meta or {}
+                meta = dict(getattr(message, "meta", {}) or {})
                 file = meta.get("file", None)
                 if isinstance(file, File):
                     if file.transfer_method == FileTransferMethod.TOOL_FILE:
                         assert file.related_id is not None
-                        url = cls.get_tool_file_url(tool_file_id=file.related_id, extension=file.extension)
+                        url = cls.get_tool_file_url(
+                            tool_file_id=file.related_id,
+                            extension=file.extension,
+                            storage_key=file.storage_key,
+                        )
+                        meta_copy = dict(meta)
+                        meta_copy.setdefault("tool_file_id", file.related_id)
+                        meta_copy.setdefault("tool_file_storage_key", file.storage_key)
                         if file.type == FileType.IMAGE:
                             yield ToolInvokeMessage(
                                 type=ToolInvokeMessage.MessageType.IMAGE_LINK,
                                 message=ToolInvokeMessage.TextMessage(text=url),
-                                meta=meta.copy() if meta is not None else {},
+                                meta=meta_copy,
                             )
                         else:
                             yield ToolInvokeMessage(
                                 type=ToolInvokeMessage.MessageType.LINK,
                                 message=ToolInvokeMessage.TextMessage(text=url),
-                                meta=meta.copy() if meta is not None else {},
+                                meta=meta_copy,
                             )
                     else:
                         yield message
@@ -164,5 +189,5 @@ class ToolFileMessageTransformer:
                 yield message
 
     @classmethod
-    def get_tool_file_url(cls, tool_file_id: str, extension: str | None) -> str:
-        return f"/files/tools/{tool_file_id}{extension or '.bin'}"
+    def get_tool_file_url(cls, tool_file_id: str, extension: str | None, storage_key: str | None = None) -> str:
+        return sign_tool_file(tool_file_id=tool_file_id, extension=extension or ".bin", storage_key=storage_key)

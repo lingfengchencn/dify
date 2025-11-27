@@ -272,7 +272,9 @@ class ToolNode(Node):
                 else:
                     transfer_method = FileTransferMethod.TOOL_FILE
 
-                tool_file_id = str(url).split("/")[-1].split(".")[0]
+                tool_file_id = message.meta.get("tool_file_id") if message.meta else None
+                if not tool_file_id and "/files/tools/" in str(url):
+                    tool_file_id = str(url).split("/")[-1].split(".")[0]
 
                 with Session(db.engine) as session:
                     stmt = select(ToolFile).where(ToolFile.id == tool_file_id)
@@ -296,7 +298,9 @@ class ToolNode(Node):
                 assert isinstance(message.message, ToolInvokeMessage.TextMessage)
                 assert message.meta
 
-                tool_file_id = message.message.text.split("/")[-1].split(".")[0]
+                tool_file_id = message.meta.get("tool_file_id") if message.meta else None
+                if not tool_file_id and "/files/tools/" in message.message.text:
+                    tool_file_id = message.message.text.split("/")[-1].split(".")[0]
                 with Session(db.engine) as session:
                     stmt = select(ToolFile).where(ToolFile.id == tool_file_id)
                     tool_file = session.scalar(stmt)

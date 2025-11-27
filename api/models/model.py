@@ -1206,14 +1206,15 @@ class Message(Base):
                     tenant_id=current_app.tenant_id,
                 )
             elif message_file.transfer_method == FileTransferMethod.TOOL_FILE:
-                if message_file.upload_file_id is None:
-                    assert message_file.url is not None
-                    message_file.upload_file_id = message_file.url.split("/")[-1].split(".")[0]
+                tool_file_id = message_file.upload_file_id
+                if tool_file_id is None and message_file.url is not None:
+                    tool_file_id = message_file.url.split("/")[-1].split(".")[0]
+                    message_file.upload_file_id = tool_file_id
                 mapping = {
                     "id": message_file.id,
                     "type": message_file.type,
                     "transfer_method": message_file.transfer_method,
-                    "tool_file_id": message_file.upload_file_id,
+                    "tool_file_id": tool_file_id,
                 }
                 file = file_factory.build_from_mapping(
                     mapping=mapping,

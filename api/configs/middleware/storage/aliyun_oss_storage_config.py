@@ -41,3 +41,8 @@ class AliyunOSSStorageConfig(BaseSettings):
         description="Base path within the bucket to store objects (e.g., 'my-app-data/')",
         default=None,
     )
+
+    ALIYUN_OSS_ALIASES_HOST: str | None = Field(
+        description="Public alias host (e.g., CDN domain) for direct Aliyun OSS access",
+        default=None,
+    )

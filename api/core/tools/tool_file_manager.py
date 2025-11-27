@@ -14,6 +14,7 @@ from sqlalchemy.orm import Session
 
 from configs import dify_config
 from core.helper import ssrf_proxy
+from core.tools.signature import sign_tool_file
 from extensions.ext_database import db as global_db
 from extensions.ext_storage import storage
 from models.model import MessageFile
@@ -37,18 +38,13 @@ class ToolFileManager:
         """
         sign file to get a temporary url for plugin access
         """
-        # Use internal URL for plugin/tool file access in Docker environments
-        base_url = dify_config.INTERNAL_FILES_URL or dify_config.FILES_URL
-        file_preview_url = f"{base_url}/files/tools/{tool_file_id}{extension}"
+        storage_key: str | None = None
+        if dify_config.FILES_URL_TYPE == "cloud":
+            with Session(global_db.engine, expire_on_commit=False) as session:
+                tool_file = session.get(ToolFile, tool_file_id)
+                storage_key = tool_file.file_key if tool_file else None
 
-        timestamp = str(int(time.time()))
-        nonce = os.urandom(16).hex()
-        data_to_sign = f"file-preview|{tool_file_id}|{timestamp}|{nonce}"
-        secret_key = dify_config.SECRET_KEY.encode() if dify_config.SECRET_KEY else b""
-        sign = hmac.new(secret_key, data_to_sign.encode(), hashlib.sha256).digest()
-        encoded_sign = base64.urlsafe_b64encode(sign).decode()
-
-        return f"{file_preview_url}?timestamp={timestamp}&nonce={nonce}&sign={encoded_sign}"
+        return sign_tool_file(tool_file_id=tool_file_id, extension=extension, storage_key=storage_key)
 
     @staticmethod
     def verify_file(file_id: str, timestamp: str, nonce: str, sign: str) -> bool:
@@ -190,17 +186,15 @@ class ToolFileManager:
                 .first()
             )
 
-            # Check if message_file is not None
+            tool_file_id: str | None = None
             if message_file is not None:
-                # get tool file id
-                if message_file.url is not None:
-                    tool_file_id = message_file.url.split("/")[-1]
-                    # trim extension
-                    tool_file_id = tool_file_id.split(".")[0]
-                else:
-                    tool_file_id = None
-            else:
-                tool_file_id = None
+                tool_file_id = message_file.upload_file_id
+                if (
+                    not tool_file_id
+                    and message_file.url is not None
+                    and "/files/tools/" in message_file.url
+                ):
+                    tool_file_id = message_file.url.split("/")[-1].split(".")[0]
 
             tool_file: ToolFile | None = (
                 session.query(ToolFile)

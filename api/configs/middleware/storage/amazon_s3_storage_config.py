@@ -43,3 +43,8 @@ class S3StorageConfig(BaseSettings):
         description="Use AWS managed IAM roles for authentication instead of access/secret keys",
         default=False,
     )
+
+    S3_PUBLIC_BASE_URL: str | None = Field(
+        description="Base URL (e.g., CDN) to access objects directly from S3",
+        default=None,
+    )

@@ -26,3 +26,8 @@ class BaiduOBSStorageConfig(BaseSettings):
         description="URL of the Baidu OSS endpoint for your chosen region (e.g., 'https://.bj.bcebos.com')",
         default=None,
     )
+
+    BAIDU_OBS_PUBLIC_BASE_URL: str | None = Field(
+        description="Public base URL for serving Baidu OBS objects",
+        default=None,
+    )

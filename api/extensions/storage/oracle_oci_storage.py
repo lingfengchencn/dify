@@ -57,3 +57,15 @@ class OracleOCIStorage(BaseStorage):
 
     def delete(self, filename):
         self.client.delete_object(Bucket=self.bucket_name, Key=filename)
+
+    def get_url(self, filename: str, *, expires_in: int) -> str:
+        key = filename.lstrip("/")
+        if dify_config.OCI_STORAGE_PUBLIC_BASE_URL:
+            base = dify_config.OCI_STORAGE_PUBLIC_BASE_URL.rstrip("/")
+            return f"{base}/{key}"
+
+        return self.client.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": self.bucket_name, "Key": key},
+            ExpiresIn=expires_in,
+        )

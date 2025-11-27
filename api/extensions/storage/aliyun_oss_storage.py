@@ -1,4 +1,5 @@
 import posixpath
+from urllib.parse import urlparse, urlunparse
 from collections.abc import Generator
 
 import oss2 as aliyun_s3
@@ -51,6 +52,18 @@ class AliyunOssStorage(BaseStorage):
 
     def delete(self, filename: str):
         self.client.delete_object(self.__wrapper_folder_filename(filename))
+
+    def get_url(self, filename: str, *, expires_in: int) -> str:
+        object_key = self.__wrapper_folder_filename(filename)
+        signed_url = self.client.sign_url("GET", object_key, expires=expires_in)
+        if dify_config.ALIYUN_OSS_ALIASES_HOST:
+            alias = dify_config.ALIYUN_OSS_ALIASES_HOST.rstrip("/")
+            parsed = urlparse(signed_url)
+            alias_parsed = urlparse(alias)
+            netloc = alias_parsed.netloc or alias_parsed.path
+            scheme = alias_parsed.scheme or parsed.scheme
+            return urlunparse((scheme, netloc, parsed.path, parsed.params, parsed.query, parsed.fragment))
+        return signed_url
 
     def __wrapper_folder_filename(self, filename: str) -> str:
         return posixpath.join(self.folder, filename) if self.folder else filename

@@ -49,3 +49,17 @@ class HuaweiObsStorage(BaseStorage):
             return res
         else:
             return None
+
+    def get_url(self, filename: str, *, expires_in: int) -> str:
+        key = filename.lstrip("/")
+        if dify_config.HUAWEI_OBS_PUBLIC_BASE_URL:
+            base = dify_config.HUAWEI_OBS_PUBLIC_BASE_URL.rstrip("/")
+            return f"{base}/{key}"
+
+        server = (dify_config.HUAWEI_OBS_SERVER or "").rstrip("/")
+        if not server:
+            raise NotImplementedError("Set HUAWEI_OBS_PUBLIC_BASE_URL to enable direct OBS URLs")
+
+        if server.endswith(self.bucket_name):
+            return f"{server}/{key}"
+        return f"{server}/{self.bucket_name}/{key}"

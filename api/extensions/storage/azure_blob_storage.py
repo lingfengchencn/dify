@@ -2,7 +2,14 @@ from collections.abc import Generator
 from datetime import timedelta
 
 from azure.identity import ChainedTokenCredential, DefaultAzureCredential
-from azure.storage.blob import AccountSasPermissions, BlobServiceClient, ResourceTypes, generate_account_sas
+from azure.storage.blob import (
+    AccountSasPermissions,
+    BlobSasPermissions,
+    BlobServiceClient,
+    ResourceTypes,
+    generate_account_sas,
+    generate_blob_sas,
+)
 
 from configs import dify_config
 from extensions.ext_redis import redis_client
@@ -83,6 +90,31 @@ class AzureBlobStorage(BaseStorage):
 
         blob_container = client.get_container_client(container=self.bucket_name)
         blob_container.delete_blob(filename)
+
+    def get_url(self, filename: str, *, expires_in: int) -> str:
+        blob_path = filename.lstrip("/")
+        if dify_config.AZURE_BLOB_PUBLIC_BASE_URL:
+            base = dify_config.AZURE_BLOB_PUBLIC_BASE_URL.rstrip("/")
+            return f"{base}/{blob_path}"
+
+        if not self.bucket_name or not self.account_url:
+            raise NotImplementedError("Azure Blob public URL is not configured; set AZURE_BLOB_PUBLIC_BASE_URL")
+
+        if not self.account_key or self.account_key == "managedidentity":
+            raise NotImplementedError(
+                "Azure Blob signing requires account key; set AZURE_BLOB_PUBLIC_BASE_URL or account key"
+            )
+
+        sas_token = generate_blob_sas(
+            account_name=self.account_name or "",
+            account_key=self.account_key,
+            container_name=self.bucket_name,
+            blob_name=blob_path,
+            permission=BlobSasPermissions(read=True),
+            expiry=naive_utc_now() + timedelta(seconds=expires_in),
+        )
+        base = self.account_url.rstrip("/")
+        return f"{base}/{self.bucket_name}/{blob_path}?{sas_token}"
 
     def _sync_client(self):
         if self.account_key == "managedidentity":

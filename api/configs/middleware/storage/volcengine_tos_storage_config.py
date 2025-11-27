@@ -31,3 +31,8 @@ class VolcengineTOSStorageConfig(BaseSettings):
         description="Volcengine region where the TOS bucket is located (e.g., 'cn-beijing')",
         default=None,
     )
+
+    VOLCENGINE_TOS_PUBLIC_BASE_URL: str | None = Field(
+        description="Public base URL for serving Volcengine TOS objects",
+        default=None,
+    )

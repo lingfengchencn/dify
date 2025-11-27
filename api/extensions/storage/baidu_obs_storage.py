@@ -55,3 +55,9 @@ class BaiduObsStorage(BaseStorage):
 
     def delete(self, filename):
         self.client.delete_object(bucket_name=self.bucket_name, key=filename)
+
+    def get_url(self, filename: str, *, expires_in: int) -> str:
+        if not dify_config.BAIDU_OBS_PUBLIC_BASE_URL:
+            raise NotImplementedError("Set BAIDU_OBS_PUBLIC_BASE_URL to enable direct Baidu OBS URLs")
+        base = dify_config.BAIDU_OBS_PUBLIC_BASE_URL.rstrip("/")
+        return f"{base}/{filename.lstrip('/')}"

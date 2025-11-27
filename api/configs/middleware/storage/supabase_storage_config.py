@@ -21,3 +21,8 @@ class SupabaseStorageConfig(BaseSettings):
         description="URL of the Supabase",
         default=None,
     )
+
+    SUPABASE_PUBLIC_BASE_URL: str | None = Field(
+        description="Public base URL for serving Supabase storage objects",
+        default=None,
+    )
