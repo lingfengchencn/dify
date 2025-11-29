@@ -112,7 +112,7 @@ class Storage:
     def exists(self, filename):
         return self.storage_runner.exists(filename)
 
-    def delete(self, filename):
+    def delete(self, filename: str):
         return self.storage_runner.delete(filename)
 
     def get_url(self, filename: str) -> str:
