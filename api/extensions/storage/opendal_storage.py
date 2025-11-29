@@ -30,10 +30,16 @@ def _get_opendal_kwargs(*, scheme: str, env_file_path: str = ".env", prefix: str
 class OpenDALStorage(BaseStorage):
     def __init__(self, scheme: str, **kwargs):
         kwargs = kwargs or _get_opendal_kwargs(scheme=scheme)
+        self.scheme = scheme
+        self._fs_root: Path | None = None
 
         if scheme == "fs":
-            root = kwargs.get("root", "storage")
-            Path(root).mkdir(parents=True, exist_ok=True)
+            configured_root = kwargs.get("root", "storage")
+            root_path = Path(configured_root).resolve()
+            # Ensure the operator receives the effective root even when it isn't provided via kwargs/env
+            kwargs.setdefault("root", str(root_path))
+            root_path.mkdir(parents=True, exist_ok=True)
+            self._fs_root = root_path
 
         retry_layer = opendal.layers.RetryLayer(max_times=3, factor=2.0, jitter=True)
         self.op = Operator(scheme=scheme, **kwargs).layer(retry_layer)
@@ -90,6 +96,9 @@ class OpenDALStorage(BaseStorage):
         directories: bool = False,
         recursive: bool = False,
     ) -> list[str]:
+        if self.scheme == "fs" and self._fs_root is not None:
+            return self._scan_local(path, files=files, directories=directories, recursive=recursive)
+
         if not self.exists(path):
             raise FileNotFoundError("Path not found")
 
@@ -143,6 +152,55 @@ class OpenDALStorage(BaseStorage):
 
         logger.debug(
             "recursively scanned %d items under %s", len(items), path
+        )
+        return items
+
+    def _scan_local(
+        self,
+        path: str,
+        *,
+        files: bool,
+        directories: bool,
+        recursive: bool,
+    ) -> list[str]:
+        if self._fs_root is None:
+            raise FileNotFoundError("Local storage root not configured")
+
+        root_path = self._fs_root
+        target_path = (root_path / path).resolve() if path else root_path
+
+        try:
+            target_path.relative_to(root_path)
+        except ValueError:
+            # Requested path escapes the storage root
+            raise FileNotFoundError("Path not found")
+
+        if not target_path.exists():
+            raise FileNotFoundError("Path not found")
+
+        def _relative(entry: Path) -> str:
+            return entry.relative_to(root_path).as_posix()
+
+        if target_path.is_file():
+            return [_relative(target_path)] if files else []
+
+        items: list[str] = []
+        iterator = target_path.rglob("*") if recursive else target_path.iterdir()
+
+        for entry in iterator:
+            if entry.is_dir():
+                if directories:
+                    items.append(f"{_relative(entry).rstrip('/')}/")
+                continue
+
+            if files:
+                items.append(_relative(entry))
+
+        logger.debug(
+            "locally scanned %d items under %s (recursive=%s)",
+            len(items),
+            path or ".",
+            recursive,
         )
         return items
 
